@@ -17,6 +17,9 @@ from tqdm import tqdm
 import time
 
 
+# 分词词汇的正则
+patt = re.compile("[\n_\s]+")
+
 def word_count(files, filter_min=1):
     """
     统计词频，对于一些低频的字符什么都学不到
@@ -25,11 +28,21 @@ def word_count(files, filter_min=1):
     :return:
     """
     words = []
+    tags = []
     for file in files:
         with open(file, encoding="utf-8", mode="r") as file:
             # print(file.read())
-            words.extend([w.split("/")[0] for w in re.compile("\n|_").split(file.read().strip())])
+            string = file.read()
+            words.extend([w.split("/")[0] for w in patt.split(string.strip())])
+            tags.extend(
+                [w.split("/")[1] for w in patt.split(string.strip()) if len(w.split("/")) == 2])
+            # tmp = [w.split("/") for w in re.compile("\n|_").split(file.read().strip())]
+            # tags.extend(pair[1] for pair in tmp if len(words) == 2)
+            # words.extend(pair[0] for pair in tmp if len(words) == 2)
             # file.closed()
+            del string
+    logger.info("训练数据输出的tag分布 %s" % Counter(tags))
+    del tags
     counter = Counter(words)
     save_words = set()
     filter_words = set()
@@ -46,7 +59,7 @@ def word_count(files, filter_min=1):
 def word2vec(model_path, corpus, embeding_size=256, min_count=1, window=7):
     path = get_tmpfile(model_path)
     logger.info("开始训练word2vec：%s" % time.ctime())
-    model = Word2Vec(sentences=corpus, size=embeding_size, min_count=min_count, window=window, workers=2, iter=7)
+    model = Word2Vec(sentences=corpus, size=embeding_size, min_count=min_count, window=window, workers=4, iter=10)
     logger.info("结束训练word2vec：%s" % time.ctime())
     model.save(model_path)
     # model.wv.save(wv_path)
@@ -54,7 +67,7 @@ def word2vec(model_path, corpus, embeding_size=256, min_count=1, window=7):
     # model = Word2Vec.load(model_path)
     with open(model_path, encoding="utf-8", mode="w") as file:
         for word, _ in model.wv.vocab.items():
-            print(word)
+            # print(word)
             vector = [str(i) for i in model.wv[word]]
             file.write(word + " " + " ".join(vector) + "\n")
 
@@ -66,13 +79,13 @@ def run_word2vec(files, unk_words, window):
         with open(file, encoding="utf-8", mode="r") as file:
             for line in file.readlines():
                 # for train data  split("/")
-                words_line = [w.split("/")[0] for w in line.strip().split("_")]
+                words_line = [w.split("/")[0] for w in patt.split(line.strip())]
                 words_line_with_unk = list(map(f, words_line))
                 if len(words_line) < window:
                     # print(line)
                     continue
-                corpus.append(words_line_with_unk)
-    logger.info(len(corpus))
+                corpus.append([v + "_" for v in words_line_with_unk])
+    logger.info("训练word2vec 的句子数量：%s" % len(corpus))
     with open("data/train_word2vec.txt", encoding="utf-8", mode="w") as file:
         string = "\n".join([" ".join(words) for words in corpus])
         file.write(string)
@@ -109,7 +122,8 @@ def prepare_data_lstm_crf(file, data_type, unk_words=set()):
 
     else:
         for line in tqdm(file.readlines()):
-            pieces = line.strip().split()
+            # train data 的piece 通过空格分割
+            pieces = re.split("\s+", line.strip())
             line_input_seq = []
             line_output_seq = []
             for piece_res in map(piece2tag, pieces):
@@ -140,7 +154,7 @@ if __name__ == '__main__':
     # print(piece2tag("12266/c"))
     # print(piece2tag("17488_12266/c"))
     # print(piece2tag("17488_19311_12266/c"))
-    # prepare_data_lstm_crf("data/test.txt", "test", filter_words)
-    # prepare_data_lstm_crf("data/train.txt", "train", filter_words)
+    prepare_data_lstm_crf("data/test.txt", "test", filter_words)
+    prepare_data_lstm_crf("data/train.txt", "train", filter_words)
     files = ["data/corpus.txt", "data/train.txt", "data/test.txt"]
     run_word2vec(files, unk_words=filter_words, window=6)
