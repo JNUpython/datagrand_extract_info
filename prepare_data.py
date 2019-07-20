@@ -33,6 +33,7 @@ def word_count(files, filter_min=1):
         with open(file, encoding="utf-8", mode="r") as file:
             # print(file.read())
             string = file.read()
+            # 用到train data
             words.extend([w.split("/")[0] for w in patt.split(string.strip())])
             tags.extend(
                 [w.split("/")[1] for w in patt.split(string.strip()) if len(w.split("/")) == 2])
@@ -78,7 +79,7 @@ def run_word2vec(files, unk_words, window):
     for file in files:
         with open(file, encoding="utf-8", mode="r") as file:
             for line in file.readlines():
-                # for train data  split("/")
+                # for train data  split("/")：可能会用到trian  data
                 words_line = [w.split("/")[0] for w in patt.split(line.strip())]
                 words_line_with_unk = list(map(f, words_line))
                 if len(words_line) < window:
@@ -129,6 +130,7 @@ def prepare_data_lstm_crf(file, data_type, unk_words=set()):
             for piece_res in map(piece2tag, pieces):
                 for item1, item2 in piece_res:
                     line_input_seq.append(item1)
+
                     line_output_seq.append(item2)
             input_seq.append(line_input_seq)
             output_seq.append(line_output_seq)
