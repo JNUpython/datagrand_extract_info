@@ -51,6 +51,7 @@ def word_count(files, filter_min=1, save=True):
     logger.info("训练数据输出的tag分布 %s" % Counter(tags))
     del tags
     counter = Counter(words)
+
     save_words = set()
     filter_words = set()
     for k, v in counter.items():
@@ -116,7 +117,7 @@ def piece2tag(string):
     else:
         result.append([piece_words[0], tag + "_B"])
         for v in piece_words[1:-1]:
-            result.append([piece_words[0], tag + "_M"])
+            result.append([v, tag + "_M"])
         result.append([piece_words[0], tag + "_E"])
     return result
 
@@ -135,10 +136,12 @@ def prepare_data_lstm_crf(file, data_type):
     else:
         for line in tqdm(file.readlines()):
             # for line in file.readlines():
+            line_words = re.findall("\d+", line)
+            # input_seq.append(line_words)
             # logger.info(line)
             # train data 的piece 通过空格分割
             pieces = re.split("\s+", line.strip())
-            # logger.info(pieces)
+            # # logger.info(pieces)
             line_seq = []
             line_tag = []
             pieces_res = list(map(piece2tag, pieces))
@@ -217,7 +220,6 @@ if __name__ == '__main__':
     files = ["data/train.txt", "data/test.txt"]
     word2ids = get_voc_dict(files)
     logger.info("需要的voc  size 大小 %d" % len(word2ids))
-
 
     # files = ["data/corpus.txt", "data/train.txt"]
     # save_words, filter_words = word_count(files, 2)
