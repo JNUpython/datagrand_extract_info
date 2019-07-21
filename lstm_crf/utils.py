@@ -6,7 +6,9 @@ import pickle
 import numpy as np
 import tensorflow as tf
 from my_log import logger
+import yaml
 
+config = yaml.load(open(r"D:\projects_py\datagrand_extract_info\lstm_crf\config.yml", encoding="utf-8"))
 
 def uniform_tensor(shape, name, dtype='float32'):
     """
@@ -59,8 +61,7 @@ def shuffle_matrix(*args, **kw):
         np.random.shuffle(arg)
 
 
-def create_dictionary(token_dict, dic_path, start=0, sort=False,
-                      min_count=None, lower=False, overwrite=False):
+def create_dictionary(token_dict, dic_path, start=0, sort=False, min_count=None, lower=False, overwrite=True):
     """
     构建字典，并将构建的字典写入pkl文件中，即将信号字典编排序号，并保存
     Args:
@@ -182,7 +183,7 @@ def embedding_txt2pkl(path_txt, path_pkl):
           (path_pkl, word_vectors.vector_size))
 
 
-def load_embed_from_txt(path):
+def load_embed_from_txt(path, headline=False):
     """
     读取txt文件格式的embedding
     Args:
@@ -192,14 +193,17 @@ def load_embed_from_txt(path):
         embed_dict: dict
     """
     file_r = codecs.open(path, 'r', encoding='utf-8')
-    line = file_r.readline()  # 第一行不是字符向量，第一个向量的总数
-    voc_size, vec_dim = map(int, line.split(' '))
+    if headline:
+        # 第一行是否包含embedding的具体信息
+        line = file_r.readline()  # 第一行不是字符向量，第一个向量的总数
+        logger.info("embedding headline: %s"  % line)
+        # voc_size, vec_dim = map(int, line.split(' '))
     embedding = dict()
     line = file_r.readline()
     while line:
         items = line.split(' ')
-        item = items[0]
+        item = items[0][:-1]  # 第一个词汇并且提出下划线
         vec = np.array(items[1:], dtype='float32')
         embedding[item] = vec
         line = file_r.readline()
-    return embedding, vec_dim   # 词向量词典， embedsize
+    return embedding, len(vec)   # 词向量词典， embedsize
