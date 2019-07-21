@@ -10,14 +10,14 @@ data_params:
     label: {min_count: 0, path: ../data/lstm_crf/train_test_tag2ids.pkl}
 model: lstm_crf
 model_params:
-  batch_size: 64
+  batch_size: 128
   bilstm_params: {num_layers: 1, num_units: 256, rnn_dropout: 0.2}
   clip: 10
   conv_dropout: 0.2
   conv_filter_len_list: [1, 2, 3, 4, 5]
   conv_filter_size_list: [8, 8, 8, 8, 8]
   dev_size: 0.1
-  dropout_rate: 0.5
+  dropout_rate: 0.3
   embed_params:
     char:
       dropout_rate: null
@@ -36,10 +36,10 @@ model_params:
       shape: [null, null]
   feature_names: [f1]
   l2_rate: 0.001
-  learning_rate: 0.0001
+  learning_rate: 0.00005
   max_patience: 5
-  nb_classes: 16
-  nb_epoch: 50
+  nb_classes: 4
+  nb_epoch: 1000
   path_model: ../model/lstm_crf/model
   rnn_unit: lstm
   sequence_len_pt: 95

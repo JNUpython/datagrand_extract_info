@@ -113,12 +113,16 @@ def piece2tag(string):
     assert len(piece_words) > 0
     result = []
     if len(piece_words) == 1:
-        result.append([piece_words[0], tag + "_S"])
+        # result.append([piece_words[0], tag + "_S"])
+        result.append([piece_words[0], tag])
     else:
-        result.append([piece_words[0], tag + "_B"])
+        # result.append([piece_words[0], tag + "_B"])
+        result.append([piece_words[0], tag])
         for v in piece_words[1:-1]:
-            result.append([v, tag + "_M"])
-        result.append([piece_words[0], tag + "_E"])
+            # result.append([v, tag + "_M"])
+            result.append([v, tag])
+        # result.append([piece_words[0], tag + "_E"])
+        result.append([piece_words[0], tag])
     return result
 
 
@@ -136,7 +140,7 @@ def prepare_data_lstm_crf(file, data_type):
     else:
         for line in tqdm(file.readlines()):
             # for line in file.readlines():
-            line_words = re.findall("\d+", line)
+            # line_words = re.findall("\d+", line)
             # input_seq.append(line_words)
             # logger.info(line)
             # train data 的piece 通过空格分割
@@ -232,7 +236,7 @@ def get_tag_dict(file, start=1):
 
 def pred_sentence_tag_2_string(sentence):
     # 被序列化标记的句子转换成句子
-    word_tags = [v.strip()[:-2].split("\t") for v in sentence.split("\n")]
+    word_tags = [v.strip().split("\t") for v in sentence.split("\n")]
     res = word_tags[0][0]
     former_tag = word_tags[0][1]
     for word, tag in word_tags[1:]:
@@ -246,6 +250,55 @@ def pred_sentence_tag_2_string(sentence):
     # logger.info(res)
     # print()
     return res
+
+# def pred_sentence_tag_2_string(sentence):
+#     # 被序列化标记的句子转换成句子
+#     word_tags = [v.strip().split("\t") for v in sentence.split("\n")]
+#     # 将标注的不同类别分开
+#     res = word_tags[0][0] + word_tags[0][1][-1]  # 标注类别结果分开 每个char后面会包含分词结果
+#     former_tag = word_tags[0][1][0]
+#     for word, tag in word_tags[1:]:
+#         # logger.info(word + "_" + tag)
+#         if tag[0] != former_tag:
+#             res += "/" + former_tag + "  " + word + tag[-1]
+#             former_tag = tag[0]
+#         else:
+#             res += "_" + word + tag[-1]
+#     res += "/" + tag[0]
+#     # logger.info(res)
+#     # print()
+#
+#     # 一个片段可能包含同样的多个序列，利用分词特性进行拆开
+#     res = re.split("\s+", res)
+#
+#     def segment(piece):
+#         seg_res = []
+#         piece, tag = piece.split("/")
+#         # E S 代表两个每个词汇的结尾
+#         items = [v for v in re.split("E|S", piece) if v]
+#         # logger.info(items)
+#         illegal_count = 0
+#         for item in items:
+#             words = re.split("[A-Z_]", item)
+#             if len(words) > 1:
+#                 first_B = item[len(words[0])]
+#                 seg = "_".join(words)
+#                 if first_B != "B":
+#                     # 第一个字母不是B代表不合法
+#                     illegal_count += 1
+#                     seg_res.append(seg + "/o")
+#                     logger.info("===========不合法的结果：=========")
+#                     logger.info(piece)
+#                     logger.info(item)
+#                 else:
+#                     seg_res.append(seg + "/" + tag)
+#
+#             else:
+#                 seg_res.append(words[0] + "/" + tag)
+#         return "  ".join(seg_res)
+#
+#     res = list(map(segment, res))
+#     return "  ".join(res)
 
 def submit_result(in_file, ou_file):
     with open(in_file, encoding="utf-8", mode="r") as file:
@@ -264,32 +317,32 @@ def submit_result(in_file, ou_file):
 if __name__ == '__main__':
 
     ######################lstm_crf############################
-    # # 统计train 和test的词频
-    # files = ["data/train.txt"]
-    # word_count(files, 1, False)
-    # files = ["data/test.txt"]
-    # word_count(files, 1, False)
-    # # 获取train和test的词汇
-    # files = ["data/train.txt", "data/test.txt"]
-    # word2ids = get_voc_dict(files, 2)  # 0 for padding; 1 for unk
-    # logger.info("需要的voc  size 大小 %d" % len(word2ids))
-    #
-    # # files = ["data/corpus.txt", "data/train.txt"]
-    # # save_words, filter_words = word_count(files, 2)
-    # save_words = pickle.load(open("data/words.pkl", mode="rb"))
-    #
-    # # print(piece2tag("12266/c"))
-    # # print(piece2tag("17488_12266/c"))
-    # # print(piece2tag("17488_19311_12266/c"))
-    #
-    # # 将train和test准备成标准的输入模式
-    # prepare_data_lstm_crf("data/test.txt", "test")
-    # prepare_data_lstm_crf("data/train.txt", "train")
-    # # 必须在train准备好之后统计tag
-    # get_tag_dict("data/lstm_crf/train.txt", 1)  # 0 for padding
-    # files = ["data/corpus.txt", "data/train.txt", "data/test.txt"]
+    # 统计train 和test的词频
+    files = ["data/train.txt"]
+    word_count(files, 1, False)
+    files = ["data/test.txt"]
+    word_count(files, 1, False)
+    # 获取train和test的词汇
+    files = ["data/train.txt", "data/test.txt"]
+    voc_size = get_voc_dict(files, 2)  # 0 for padding; 1 for unk
+    logger.info("需要的voc  size 大小 %d" % voc_size)
+
+    # files = ["data/corpus.txt", "data/train.txt"]
+    # save_words, filter_words = word_count(files, 2)
+    save_words = pickle.load(open("data/words.pkl", mode="rb"))
+
+    # print(piece2tag("12266/c"))
+    # print(piece2tag("17488_12266/c"))
+    # print(piece2tag("17488_19311_12266/c"))
+
+    # 将train和test准备成标准的输入模式
+    prepare_data_lstm_crf("data/test.txt", "test")
+    prepare_data_lstm_crf("data/train.txt", "train")
+    # 必须在train准备好之后统计tag
+    get_tag_dict("data/lstm_crf/train.txt", 1)  # 0 for padding
+    files = ["data/corpus.txt", "data/train.txt", "data/test.txt"]
     # run_word2vec(files, words=save_words, window=6)
 
 
     ######################lstm_crf result############################
-    submit_result("data/lstm_crf/result.txt", "data/lstm_crf/result_submit.txt")
+    # submit_result("data/lstm_crf/result.txt", "data/lstm_crf/result_submit.txt")
