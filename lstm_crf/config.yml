@@ -1,13 +1,13 @@
 data_params:
-  path_result: D:\projects_py\datagrand_extract_info\data\lstm_crf\result.txt
-  path_test: D:\projects_py\datagrand_extract_info\data\lstm_crf\test.txt
-  path_train: D:\projects_py\datagrand_extract_info\data\lstm_crf\train.txt
+  path_result: ../data/lstm_crf/result.txt
+  path_test: ../data/lstm_crf/test.txt
+  path_train: ../data/lstm_crf/train.txt
   sep: table
   voc_params:
-    char: {min_count: 1, path: ./Res/voc/char.voc.pkl}
-    f1: {min_count: 1, path: ./Res/voc/f1.voc.pkl}
-    f2: {min_count: 1, path: ./Res/voc/f2.voc.pkl}
-    label: {min_count: 0, path: ./Res/voc/label.voc.pkl}
+    char: {min_count: 1, path: null}
+    f1: {min_count: 1, path: ../data/lstm_crf/train_test_word2ids.pkl}
+    f2: {min_count: 1, path: null}
+    label: {min_count: 0, path: ../data/lstm_crf/train_test_tag2ids.pkl}
 model: lstm_crf
 model_params:
   batch_size: 64
@@ -26,9 +26,9 @@ model_params:
       shape: [null, null]
     f1:
       dropout_rate: 0.3
-      path: ./Res/embed/f1_embed.mat.pkl
-      path_pre_train: D:\projects_py\datagrand_extract_info\data\word2vec.txt
-      shape: [3289, 128]
+      path: ../data/lstm_crf/f1_embed.mat.pkl
+      path_pre_train: ../data/word2vec.txt
+      shape: [4685, 256]
     f2:
       dropout_rate: 0.3
       path: null
@@ -38,13 +38,14 @@ model_params:
   l2_rate: 0.001
   learning_rate: 0.0001
   max_patience: 5
-  nb_classes: 8
+  nb_classes: 16
   nb_epoch: 50
-  path_model: model/best_model
+  path_model: ../model/lstm_crf/model
   rnn_unit: lstm
   sequence_len_pt: 95
-  sequence_length: 41
+  sequence_length: 128
   use_char_feature: false
   use_crf: true
   word_len_pt: 95
   word_length: 11
+unknow_word: unk

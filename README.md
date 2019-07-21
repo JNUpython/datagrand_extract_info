@@ -9,3 +9,6 @@ idea：
     - 按照123的insight确定voc_size 和 max_sentence_length 然后训练word2vec
     - 分词考虑wordPiece 降低统计voc_size 大小，但是不能把目标tag wordPiece 处理掉，统计是否能降低one-hot维度，即voc_size 大小
     - 训练word2vec embedding-size 256或者512
+    
+    
+- 很多句子仅仅只有o构成

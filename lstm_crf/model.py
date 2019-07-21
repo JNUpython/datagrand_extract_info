@@ -395,7 +395,8 @@ class SequenceLabelingModel(object):
                     self.softmax_w,
                     tf.random_uniform(shape=[hidden_size, self._nb_classes], dtype=tf.float32, minval=0, maxval=1)
                 )
-                update_b = tf.assign(self.softmax_b, tf.random_uniform(shape=[self._nb_classes], dtype=tf.float32, minval=0, maxval=1))
+                update_b = tf.assign(self.softmax_b,
+                                     tf.random_uniform(shape=[self._nb_classes], dtype=tf.float32, minval=0, maxval=1))
                 print("lstm 的输出层权重，重新初始化：")
                 print("softmax_w:\n", self.sess.run(update_w))
                 print("softmax_b:\n", self.sess.run(update_b))
@@ -485,7 +486,10 @@ class SequenceLabelingModel(object):
 
             # 计算在开发集上的loss
             dev_loss = self.evaluate(data_dev_dict)
-            print('train loss: %f, dev loss: %f, l2 loss: %f' % (train_loss, dev_loss, l2_loss))
+            dev_predict = self.predict(data_dev_dict)
+            logger.info('train loss: %f, dev loss: %f, l2 loss: %f' % (train_loss, dev_loss, l2_loss))
+            acc = self.cal_acc(pred=dev_predict, real=data_dev_dict['label'], actual_len_data="pred")
+            logger.info("dev acc: %f" % acc)
 
             # 每个epoch，根据dev上的表现保存模型
             if not self._path_model:
@@ -497,17 +501,17 @@ class SequenceLabelingModel(object):
                 self.saver.save(self.sess, self._path_model)
                 print('model has saved to %s!' % self._path_model)
 
-                # ************save for java****************
-                sess = self.sess
-                output_graph_def = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def,
-                                                                                output_node_names=["logits"])
-                with tf.gfile.FastGFile('./java/' + config["model"] + '/graph.pb', mode='wb') as f:
-                    f.write(output_graph_def.SerializeToString())
-                #  save crf parmas
-                if self._use_crf:
-                    np.savetxt(fname="./java/" + config["model"] + "/crf_transition_params.txt", X=transition_params,
-                               delimiter=', ')
-                    print("has saved paras")
+                # # ************save for java****************
+                # sess = self.sess
+                # output_graph_def = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def,
+                #                                                                 output_node_names=["logits"])
+                # with tf.gfile.FastGFile('./java/' + config["model"] + '/graph.pb', mode='wb') as f:
+                #     f.write(output_graph_def.SerializeToString())
+                # #  save crf parmas
+                # if self._use_crf:
+                #     np.savetxt(fname="./java/" + config["model"] + "/crf_transition_params.txt", X=transition_params,
+                #                delimiter=', ')
+                #     print("has saved paras")
 
             else:
                 current_patience += 1
@@ -583,7 +587,7 @@ class SequenceLabelingModel(object):
         Return:
             pass
         """
-        print('predicting...')
+        logger.info('predicting...')
         data_count = data_test_dict[self._feature_names[0]].shape[0]
         nb_test = int(math.ceil(data_count / float(self._batch_size)))
         result_sequences = []  # 标记结果
@@ -641,7 +645,8 @@ class SequenceLabelingModel(object):
             logits = tf.nn.softmax(self.logits, dim=-1)
             cross_entropy = -tf.reduce_sum(labels * tf.log(logits), axis=2)
             mask = tf.sign(tf.reduce_max(tf.abs(labels), axis=2))
-            cross_entropy_masked = tf.reduce_sum(cross_entropy * mask, axis=1) / tf.cast(self.sequence_actual_length, tf.float32)
+            cross_entropy_masked = tf.reduce_sum(cross_entropy * mask, axis=1) / tf.cast(self.sequence_actual_length,
+                                                                                         tf.float32)
             return tf.reduce_mean(cross_entropy_masked)
         else:
             # 添加crf层
@@ -654,6 +659,24 @@ class SequenceLabelingModel(object):
             # log_likelihood: 标量,log-likelihood
             # transition_params: 形状为[num_tags, num_tags] 的转移矩阵
             log_likelihood, self.transition_params = tf.contrib.crf.crf_log_likelihood(
-                self.logits, self.input_label_ph, self.sequence_actual_length, transition_params =None
+                self.logits, self.input_label_ph, self.sequence_actual_length, transition_params=None
             )
             return tf.reduce_mean(-log_likelihood)
+
+    @staticmethod
+    def cal_acc(pred, real, actual_len_data="pred"):
+        assert actual_len_data in ["pred", "real"]
+        pred_flatten = []
+        real_flatten = []
+        for p, r in zip(pred, real):
+            if actual_len_data == "pred":
+                actual_len = len(p)
+            else:
+                actual_len = len(r)
+            pred_flatten.extend(p[:actual_len])
+            real_flatten.extend(r[:actual_len])
+        # logger.info()
+        assert (len(pred_flatten) == len(real_flatten))
+        acc = tf.reduce_mean(tf.cast(tf.equal(pred_flatten, real_flatten), tf.float32))
+        with tf.Session() as sess:
+            return sess.run(acc)
