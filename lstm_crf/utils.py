@@ -111,7 +111,7 @@ def map_item2id(items, voc, max_len, none_word=1, lower=False, init_value=0, all
         items: list, 待映射列表
         voc: 词表
         max_len: int, 序列最大长度
-        none_word: 未登录词标号,默认为0
+        none_word: 未登录词标号,默认为1
         lower: bool, 是否转换为小写
         init_value: default is 0, 初始化的值
     Returns:

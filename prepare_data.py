@@ -230,30 +230,66 @@ def get_tag_dict(file, start=1):
     pickle.dump(tags_ids, open("D:/projects_py/datagrand_extract_info/data/lstm_crf/train_test_tag2ids.pkl", mode="wb"))
     return len(tags_ids)
 
+def pred_sentence_tag_2_string(sentence):
+    # 被序列化标记的句子转换成句子
+    word_tags = [v.strip()[:-2].split("\t") for v in sentence.split("\n")]
+    res = word_tags[0][0]
+    former_tag = word_tags[0][1]
+    for word, tag in word_tags[1:]:
+        # logger.info(word + "_" + tag)
+        if tag != former_tag:
+            res += "/" + former_tag + "  " + word
+            former_tag = tag
+        else:
+            res += "_" + word
+    res += "/" + tag
+    # logger.info(res)
+    # print()
+    return res
+
+def submit_result(in_file, ou_file):
+    with open(in_file, encoding="utf-8", mode="r") as file:
+        string = file.read().strip()
+        sentences = string.split("\n\n")
+        res = list(map(pred_sentence_tag_2_string, sentences))
+        file.close()
+
+    with open(ou_file, encoding="utf-8", mode="w") as file:
+        file.write("\n".join(res) + "\n")
+        file.close()
+    return
+
+
 
 if __name__ == '__main__':
-    # 统计train 和test的词频
-    files = ["data/train.txt"]
-    word_count(files, 1, False)
-    files = ["data/test.txt"]
-    word_count(files, 1, False)
-    # 获取train和test的词汇
-    files = ["data/train.txt", "data/test.txt"]
-    word2ids = get_voc_dict(files, 2)  # 0 for padding; 1 for unk
-    logger.info("需要的voc  size 大小 %d" % len(word2ids))
 
-    # files = ["data/corpus.txt", "data/train.txt"]
-    # save_words, filter_words = word_count(files, 2)
-    save_words = pickle.load(open("data/words.pkl", mode="rb"))
+    ######################lstm_crf############################
+    # # 统计train 和test的词频
+    # files = ["data/train.txt"]
+    # word_count(files, 1, False)
+    # files = ["data/test.txt"]
+    # word_count(files, 1, False)
+    # # 获取train和test的词汇
+    # files = ["data/train.txt", "data/test.txt"]
+    # word2ids = get_voc_dict(files, 2)  # 0 for padding; 1 for unk
+    # logger.info("需要的voc  size 大小 %d" % len(word2ids))
+    #
+    # # files = ["data/corpus.txt", "data/train.txt"]
+    # # save_words, filter_words = word_count(files, 2)
+    # save_words = pickle.load(open("data/words.pkl", mode="rb"))
+    #
+    # # print(piece2tag("12266/c"))
+    # # print(piece2tag("17488_12266/c"))
+    # # print(piece2tag("17488_19311_12266/c"))
+    #
+    # # 将train和test准备成标准的输入模式
+    # prepare_data_lstm_crf("data/test.txt", "test")
+    # prepare_data_lstm_crf("data/train.txt", "train")
+    # # 必须在train准备好之后统计tag
+    # get_tag_dict("data/lstm_crf/train.txt", 1)  # 0 for padding
+    # files = ["data/corpus.txt", "data/train.txt", "data/test.txt"]
+    # run_word2vec(files, words=save_words, window=6)
 
-    # print(piece2tag("12266/c"))
-    # print(piece2tag("17488_12266/c"))
-    # print(piece2tag("17488_19311_12266/c"))
 
-    # 将train和test准备成标准的输入模式
-    prepare_data_lstm_crf("data/test.txt", "test")
-    prepare_data_lstm_crf("data/train.txt", "train")
-    # 必须在train准备好之后统计tag
-    get_tag_dict("data/lstm_crf/train.txt", 1)  # 0 for padding
-    files = ["data/corpus.txt", "data/train.txt", "data/test.txt"]
-    run_word2vec(files, words=save_words, window=6)
+    ######################lstm_crf result############################
+    submit_result("data/lstm_crf/result.txt", "data/lstm_crf/result_submit.txt")
